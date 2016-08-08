@@ -2,7 +2,8 @@
 # coding=utf-8
 
 """
-根域名处理
+Copyright (c) 2014 Fooying (http://www.fooying.com)
+Mail:f00y1n9[at]gmail.com
 """
 
 from suffixs import SUFFIXS
@@ -26,7 +27,7 @@ class Domain:
     @classmethod
     def get_domain(cls, url):
         url = cls().url_format(url)
-        domain = url[:url.index("/")+1] if "/" in url else url
+        domain = url[:url.index("/") + 1] if "/" in url else url
         return domain
 
     @classmethod

@@ -7,25 +7,44 @@ Mail:f00y1n9[at]gmail.com
 """
 
 import random
-import logging
-import requests
-from gevent.monkey import patch_all
 
+from thirdparty import requests
+from gevent.monkey import patch_all
+from core.data import api
 from coroutine import WorkerPool
 
-
 patch_all()
-logger = logging.getLogger('3102')
+
+
+def request_patch():
+    prop = requests.models.Response.content
+
+    def content(self):
+        _content = prop.fget(self)
+        if self.encoding == 'ISO-8859-1':
+            encodings = requests.utils.get_encodings_from_content(_content)
+            if encodings:
+                self.encoding = encodings[0]
+            else:
+                self.encoding = self.apparent_encoding
+        _content = _content.decode(self.encoding, 'ignore')
+        _content = _content.encode('utf-8', 'ignore')
+        return _content
+
+    requests.models.Response.content = property(content)
+
+request_patch()
 
 
 class Req(object):
+
     def __init__(self, timeout=10, proxy_list=[], verify_proxy=False):
         self.timeout = timeout
         self.verify = False
         self.proxy_list = proxy_list
         self.verify_proxy = False
         if self.proxy_list and verify_proxy:
-            logger.info('start verify proxy...please wait')
+            api.logger.info('start verify proxy...please wait')
             self.verify_proxy = False
             self.__verify_proxy()
 
@@ -33,7 +52,7 @@ class Req(object):
         """
         进行代码验证处理,建议提供的代理列表是可用的,直接关闭验证
         """
-        logger.info('start verify proxy...')
+        api.logger.info('start verify proxy...')
         wp = WorkerPool()
         for proxy in self.proxy_list:
             proxies = {
@@ -45,7 +64,7 @@ class Req(object):
         result = wp.result
         wp.run()
         self.proxy_list = [proxy[1] for proxy in result if proxy[0]]
-        logger.info('proxy verify completed!')
+        api.logger.info('proxy verify completed!')
         self.verify_proxy = False
 
     def __emulate_request(self, **kwargs):
@@ -64,7 +83,7 @@ class Req(object):
                            'Chrome/37.0.2062.124 Safari/537.36')
         })
         s.verify = self.verify
-        s.timeout = self.timeout
+        kwargs['timeout'] = self.timeout
         if self.proxy_list:
             proxy = random.choice(self.proxy_list)
             s.proxies = proxy

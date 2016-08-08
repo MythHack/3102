@@ -6,16 +6,18 @@ Copyright (c) 2014 Fooying (http://www.fooying.com)
 Mail:f00y1n9[at]gmail.com
 """
 
-from attrdict import AttrDict
+from thirdparty.attrdict import AttrDict
+import logging
 
-# 配置存储
+# 插件配置信息存储
 conf = AttrDict()
-conf.plugins = AttrDict()  # 加载的插件配置
+conf.plugins_available = AttrDict()  # 可用的插件列表
+conf.plugins_load = AttrDict()       # 加载使用的插件配置
 conf.reg_plugins = AttrDict()
 conf.reg_plugins.domain = set([])
 conf.reg_plugins.root_domain = set([])
 conf.reg_plugins.ip = set([])
-conf.max_level = 10
+conf.plugin_controller = None
 
 # 中间数据存储
 kb = AttrDict()
@@ -28,15 +30,21 @@ kb.status.level = 0  # 当前进行层级
 kb.status.result_num = 0  # 结果数
 
 # 用于存储每个任务的进度详情
-kb.progress =  AttrDict()
+kb.progress = AttrDict()
 
 # 全局接口
 api = AttrDict()
 api.request = None
-api.logger = None
+api.logger = logging.getLogger("3102")
 
 # 结果存储
 result = AttrDict()
 result.domain = AttrDict()
 result.ip = AttrDict()
 result.root_domain = AttrDict()
+
+# paths
+paths = AttrDict()
+
+# 外部参数信息存储
+options = AttrDict()

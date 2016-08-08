@@ -7,22 +7,23 @@ Mail:f00y1n9[at]gmail.com
 """
 
 import copy
+
 import gevent
-import logging
 
 from core.data import kb
 from core.data import conf
 from core.data import result
+from core.data import api
+from core.data import options
 from comm.utils import is_intra_ip
 from comm.rootdomain import Domain
 
-logger = logging.getLogger('3102')
 
 
 def task_monitor(pc):
     while not pc.exit_flag:
         try:
-            if conf.max_level <= kb.status.level:
+            if options.max_level <= kb.status.level:
                 print_task_status()
             one_result = pc.wp.result.get(timeout=1)
         except gevent.queue.Empty:
@@ -35,23 +36,22 @@ def task_monitor(pc):
 
 def print_task_status(log=False):
     status = get_all_job_status()
-    msg = ('Job Monitor:level[%s], total[%s], done[%s], '
-           'wait[%s], runing[%s], result num[%s].') % (
+    msg = ('Monitor:level[%s], total[%s], done[%s], '
+           'runing[%s], result num[%s].') % (
         kb.status.level, status['total'], status['done'],
-        status['wait'], status['runing'], kb.status.result_num
+        status['runing'], kb.status.result_num
     )
-    msg = msg.ljust(100, ' ')
+    msg = msg.ljust(80, ' ')
     if log:
-        logger.info(msg)
+        api.logger.info(msg)
     else:
-        print '\033[1;34m[m] %s\033[1;m\r' % msg,;
-
+        print '\033[1;34m[m] %s\033[1;m\r' % msg,
 
 
 def add_task_and_save(pc, one_result):
     level = one_result.get('level', -1) + 1
 
-    if level <= conf.max_level:
+    if level <= options.max_level:
         if level > kb.status.level:
             kb.status.level = level
             print_task_status(True)
@@ -72,15 +72,14 @@ def add_task_and_save(pc, one_result):
                     }
                     pc.wp.target_queue.put(target)
                     save_result(one_result, domain, task_type)
-        print_task_status()
 
 
 def save_result(one_result, domain, task_type):
-        want_save_result = copy.deepcopy(one_result)
-        want_save_result.update({'domain': domain})
-        want_save_result.pop('result')
-        result[task_type][domain] = want_save_result
-        kb.status.result_num += 1
+    want_save_result = copy.deepcopy(one_result)
+    want_save_result.update({'domain': domain})
+    want_save_result.pop('result')
+    result[task_type][domain] = want_save_result
+    kb.status.result_num += 1
 
 
 def get_all_job_status():
@@ -100,4 +99,7 @@ def is_all_job_done():
     all_job_status = set()
     for job_progress in kb.progress.values():
         all_job_status.add(job_progress['status'])
-    return True if all_job_status == set(['done']) else False
+    if all_job_status == set(['done']) or not all_job_status:
+        return True
+    else:
+        return False

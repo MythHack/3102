@@ -8,23 +8,24 @@ Mail:f00y1n9[at]gmail.com
 
 import os
 import time
-import logging
 
 from gevent.monkey import patch_all
 
 from core.data import kb
 from core.data import api
 from core.data import conf
+from core.data import paths
 
 patch_all()
 
 
 class Plugin(object):
+
     def __init__(self, name):
-        self.plugin_path = os.path.join(conf.settings.PLUGINS_PATH, name)
-        self.logger = logging.getLogger('3102')
+        self.plugin_path = os.path.join(paths.PLUGINS_PATH, name)
+        self.logger = api.logger
         self.req = api.request
-        self.conf = conf.plugins[name]
+        self.conf = conf.plugins_load[name]
         self.name = name
         self.result = None
 
